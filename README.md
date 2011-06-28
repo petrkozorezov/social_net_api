@@ -56,5 +56,7 @@ This may be required when you want to use more than one application id same time
 
 Add another social network interface
 ------------------------------------
-See social_net_api_network_* files. ;-)
+See
+
+    social_net_api_network_*
 
