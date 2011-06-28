@@ -37,9 +37,11 @@ Exapmple config:
     %]}
 
 Then start application social_net_api:
+
     applications:start(social_net_api).
 
 and then you can use api methods, for example:
+
     social_net_api:invoke_method({secure, getBalance}, [{uid, 1025185}]).
 
 Usage as library
