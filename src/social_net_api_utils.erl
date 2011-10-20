@@ -1,9 +1,9 @@
 %% Copyright (c), 2011 Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -83,10 +83,7 @@ concat_pairs([{Key, Value}|Tail], RowSeparator, ColSeparator, Result) ->
     concat_pairs(Tail, RowSeparator, ColSeparator, [S|Result]).
 
 http_request(Request) ->
-    case code:ensure_loaded(httpc) of
-        {error, nofile} -> http:request(Request);
-        {module, httpc} -> httpc:request(Request)
-    end.
+    httpc:request(Request).
 
 get_network_module(Network) when is_atom(Network) ->
     list_to_atom( "social_net_api_network_" ++ atom_to_list(Network) ).
