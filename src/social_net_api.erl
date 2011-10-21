@@ -1,9 +1,9 @@
 %% Copyright (c), 2011 Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -26,7 +26,8 @@
 		 start/0,
 		 stop/0,
 		 validate_auth/1,
-		 invoke_method/2
+		 invoke_method/2,
+         get_currency_multiplier/0
 		]).
 
 start() ->
@@ -37,8 +38,13 @@ start() ->
 stop() ->
 	application:stop(?MODULE).
 
+%% AuthData :: {UserID, UserData, Signature} ->
+%% ok | {error, Reason}
 validate_auth(AuthData) ->
 	social_net_api_core:validate_auth(social_net_api, AuthData).
+
+get_currency_multiplier() ->
+    social_net_api_core:get_currency_multiplier(social_net_api).
 
 invoke_method(Method, Args) ->
 	social_net_api_core:invoke_method(social_net_api, Method, Args).

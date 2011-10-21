@@ -1,9 +1,9 @@
 %% Copyright (c) 2011, Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -35,6 +35,7 @@
 
 -export
 ([
+    get_currency_multiplier/1,
     start_link/1,
     start_link/2,
     stop/1,
@@ -63,6 +64,7 @@ stop(Pid, Reason)                   -> gen_server:call(Pid, {shutdown, Reason}, 
 
 validate_auth(Pid, AuthData)        -> gen_server:call(Pid, {validate_auth, AuthData}).
 invoke_method(Pid, Method, Args)    -> gen_server:call(Pid, {invoke_method, Method, Args}).
+get_currency_multiplier(Pid)        -> gen_server:call(Pid, get_currency_multiplier).
 
 init(Options) ->
     process_flag(trap_exit, true),
@@ -94,6 +96,9 @@ handle_call({invoke_method, Method, Args}, From, State=#state{client_pid=ClientP
 handle_call({validate_auth, AuthData}, From, State=#state{client_pid=ClientPid}) ->
     spawn( fun() -> gen_server:reply(From, social_net_api_client:validate_auth(ClientPid, AuthData)) end ),
     {noreply, State};
+
+handle_call(get_currency_multiplier, _, State=#state{client_pid=ClientPid}) ->
+    {reply, social_net_api_client:get_currency_multiplier(ClientPid), State};
 
 handle_call({shutdown, Reason}, _From, State=#state{client_pid=ClientPid, server_pid=ServerPid}) ->
     ok = stop_module({social_net_api_client, ClientPid}),

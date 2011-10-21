@@ -1,9 +1,9 @@
 %% Copyright (c), 2011 Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -23,6 +23,7 @@
 
 -export
 ([
+    get_currency_multiplier/0,
     parse_client_options/1,
     parse_server_options/1,
     validate_auth/2,
@@ -34,6 +35,8 @@
 -record(server_options, {app_id, secret_key}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+get_currency_multiplier() -> 100.
 
 parse_client_options(Options) ->
     {ok, #client_options{app_id     = proplists:get_value(app_id,     Options),
