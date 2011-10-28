@@ -151,8 +151,8 @@ test(Options) ->
 
 test_auth(vkontakte, Pid) ->
     ?LOG_DEBUG(": Testing vkontakte auth...", []),
-    UserID      = "8307297",
-    UserData    = "0",
+    UserID      = <<"8307297">>,
+    UserData    = <<"0">>,
     InvalidHash = <<"be0ed52012aed87c353583c386fab7e8">>,
     ValidHash   = <<"be0ed52012aed87c353583c386fab7e7">>,
     ok          = social_net_api_client:validate_auth(Pid, {UserID, UserData, ValidHash}),
@@ -161,8 +161,8 @@ test_auth(vkontakte, Pid) ->
 
 test_auth(odnoklassniki, Pid) ->
     ?LOG_DEBUG(": Testing odnoklassniki auth...", []),
-    UserID      = "3602688835892500856",
-    UserData    = "FDGFLHNJNQJSHPGEJHKKKHGGINFLIHJOGGECDCHMFCIGJOKHGDS",
+    UserID      = <<"3602688835892500856">>,
+    UserData    = <<"FDGFLHNJNQJSHPGEJHKKKHGGINFLIHJOGGECDCHMFCIGJOKHGDS">>,
     InvalidHash = <<"98e130941824f259e553b5404b6b06a8">>,
     ValidHash   = <<"98e130941824f259e553b5404b6b06a9">>,
     ok          = social_net_api_client:validate_auth(Pid, {UserID, UserData, ValidHash}),
@@ -171,11 +171,11 @@ test_auth(odnoklassniki, Pid) ->
 
 test_auth(mymail, Pid) ->
     ?LOG_DEBUG(": Testing mymail auth...", []),
-    UserID      = "3072581181014944200",
-    UserData      = "app_id=607036authentication_key=be874fffe4ef483590ef7454a32f3d14"
+    UserID      = <<"3072581181014944200">>,
+    UserData      = <<"app_id=607036authentication_key=be874fffe4ef483590ef7454a32f3d14"
                     "ext_perm=notificationsis_app_user=1oid=3072581181014944200session_expire=1304604106"
                     "session_key=d7f25e25d6d505012160b511f1c9debfvid=3072581181014944200"
-                    "window_id=CometName_b36b5e6e57f44e1c6e34e2e3d0af45b4",
+                    "window_id=CometName_b36b5e6e57f44e1c6e34e2e3d0af45b4">>,
     InvalidHash = <<"72fa69734f9315e8d45695d2efa16dff">>,
     ValidHash   = <<"72fa69734f9315e8d45695d2efa16dfe">>,
     ok          = social_net_api_client:validate_auth(Pid, {UserID, UserData, ValidHash}),

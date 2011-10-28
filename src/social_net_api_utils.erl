@@ -30,6 +30,7 @@
     find/3,
     concat/2,
     concat/3,
+    to_list/1,
     http_request/1,
     get_network_module/1,
     timestamp/0,
