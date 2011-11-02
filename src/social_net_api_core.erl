@@ -36,6 +36,7 @@
 -export
 ([
     get_currency_multiplier/1,
+    set_callback/2,
     start_link/1,
     start_link/2,
     stop/1,
@@ -49,11 +50,12 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start_module({_, nil}) -> {ok, nil};
+start_module({_, undefined}) -> {ok, undefined};
 start_module({Module, Args}) -> Module:start_link(Args).
 
-stop_module({_, nil}) -> ok;
+stop_module({_, undefined}) -> ok;
 stop_module({Module, Pid}) -> Module:stop(Pid).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,9 +64,11 @@ start_link(Name, Options)           -> gen_server:start_link( Name, ?MODULE, Opt
 stop(Pid)                           -> stop(Pid, shutdown).
 stop(Pid, Reason)                   -> gen_server:call(Pid, {shutdown, Reason}, infinity).
 
+
 validate_auth(Pid, AuthData)        -> gen_server:call(Pid, {validate_auth, AuthData}).
 invoke_method(Pid, Method, Args)    -> gen_server:call(Pid, {invoke_method, Method, Args}).
 get_currency_multiplier(Pid)        -> gen_server:call(Pid, get_currency_multiplier).
+set_callback(Pid, Callback)         -> gen_server:call(Pid, {set_callback, Callback}).
 
 init(Options) ->
     process_flag(trap_exit, true),
@@ -76,11 +80,11 @@ init(Options) ->
     BaseOptions   = [{network, Network}, {app_id, AppID}, {secret_key, SecretKey}],
 
     ClientOptions = case proplists:get_value(client_options, Options) of
-                        undefined  -> nil;
+                        undefined  -> undefined;
                         ClientOpts -> lists:append(BaseOptions, ClientOpts)
                     end,
     ServerOptions = case proplists:get_value(server_options, Options) of
-                        undefined  -> nil;
+                        undefined  -> undefined;
                         ServerOpts -> lists:append(BaseOptions, ServerOpts)
                     end,
 
@@ -99,6 +103,12 @@ handle_call({validate_auth, AuthData}, From, State=#state{client_pid=ClientPid})
 
 handle_call(get_currency_multiplier, _, State=#state{client_pid=ClientPid}) ->
     {reply, social_net_api_client:get_currency_multiplier(ClientPid), State};
+
+handle_call({set_callback, _}, _, State=#state{server_pid=undefined}) ->
+    {reply, {error, server_not_started}, State};
+
+handle_call({set_callback, Callback}, _, State=#state{server_pid=ServerPid}) ->
+    {reply, social_net_api_server:set_callback(ServerPid, Callback), State};
 
 handle_call({shutdown, Reason}, _From, State=#state{client_pid=ClientPid, server_pid=ServerPid}) ->
     ok = stop_module({social_net_api_client, ClientPid}),

@@ -1,9 +1,9 @@
 %% Copyright (c), 2011 Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -35,6 +35,7 @@
 
 -export
 ([
+    set_callback/2,
     start_link/1,
     start_link/2,
     stop/1,
@@ -42,7 +43,7 @@
     test/0
 ]).
 
--record(state, {pid, module, data}).
+-record(state, {pid, module, callback, data}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,12 +52,16 @@ start_link(Name, Options)  -> gen_server:start_link( Name, ?MODULE, Options, [] 
 stop(Pid)                  -> stop(Pid, shutdown).
 stop(Pid, Reason)          -> gen_server:call(Pid, {shutdown, Reason}, infinity).
 
+set_callback(Pid, Callback) ->
+    gen_server:call(Pid, {set_callback, Callback}).
+
 init(Options) ->
     process_flag(trap_exit, true),
 
-    Network = proplists:get_value(network, Options),
-    IP      = proplists:get_value(ip,      Options),
-    Port    = proplists:get_value(port,    Options),
+    Network  = proplists:get_value(network,  Options),
+    IP       = proplists:get_value(ip,       Options),
+    Port     = proplists:get_value(port,     Options),
+    Callback = proplists:get_value(callback, Options),
 
     Module = social_net_api_utils:get_network_module(Network),
 
@@ -68,11 +73,14 @@ init(Options) ->
 
     {ok, Data} = Module:parse_server_options(Options),
 
-    {ok, #state{pid=Pid, module=Module, data=Data}}.
+    {ok, #state{pid=Pid, module=Module, callback=Callback, data=Data}}.
 
-handle_call({payment, Request}, From, State=#state{module=Module, data=Data}) ->
-    spawn( fun() -> gen_server:reply(From, Module:process_payment(Request, Data)) end ),
+handle_call({payment, Request}, From, State=#state{module=Module, callback=Callback, data=Data}) ->
+    spawn( fun() -> gen_server:reply(From, Module:process_payment(Request, Callback, Data)) end ),
     {noreply, State};
+
+handle_call({set_callback, Callback}, _, State=#state{}) ->
+    {reply, ok, State#state{callback=Callback}};
 
 handle_call({shutdown, Reason}, _From, State=#state{pid=Pid}) ->
     ?LOG_DEBUG(": stopping social server...", []),
