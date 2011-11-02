@@ -46,7 +46,7 @@ parse_client_options(Options) ->
 parse_server_options(Options) ->
     {ok, #server_options{app_id     = proplists:get_value(app_id,     Options),
                          secret_key = proplists:get_value(secret_key, Options),
-                         mode       = proplists:get_value(mode,       Options)}}.
+                         mode       = proplists:get_value(mode,       Options, parsed)}}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
