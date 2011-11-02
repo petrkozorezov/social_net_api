@@ -28,7 +28,7 @@
     parse_server_options/1,
     validate_auth/2,
     invoke_method/3,
-    process_payment/2
+    process_payment/3
 ]).
 
 -record(client_options, {app_id, secret_key, viewer_id, host}).
@@ -100,7 +100,7 @@ invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_payment(_Request, _ServerOptions) ->
+process_payment(_Request, _Callback, _ServerOptions) ->
     {error, not_implemented}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

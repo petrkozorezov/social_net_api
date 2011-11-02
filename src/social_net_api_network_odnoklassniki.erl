@@ -28,11 +28,11 @@
     parse_server_options/1,
     validate_auth/2,
     invoke_method/3,
-    process_payment/2
+    process_payment/3
 ]).
 
 -record(client_options, {app_id, secret_key, host}).
--record(server_options, {app_id, secret_key, callback, mode}).
+-record(server_options, {app_id, secret_key, mode}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,7 +46,6 @@ parse_client_options(Options) ->
 parse_server_options(Options) ->
     {ok, #server_options{app_id     = proplists:get_value(app_id,     Options),
                          secret_key = proplists:get_value(secret_key, Options),
-                         callback   = proplists:get_value(callback,   Options),
                          mode       = proplists:get_value(mode,       Options)}}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,7 +81,7 @@ invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_payment(Request, #server_options{app_id=AppID, secret_key=SecretKey, callback=Callback, mode=Mode}) ->
+process_payment(Request, Callback, #server_options{app_id=AppID, secret_key=SecretKey, mode=Mode}) ->
     Args = Request:parse_qs(),
     case validate_keys(AppID, SecretKey, Args) of
         ok ->
