@@ -27,7 +27,8 @@
 		 stop/0,
 		 validate_auth/1,
 		 invoke_method/2,
-         get_currency_multiplier/0
+         get_currency_multiplier/0,
+         set_callback/1
 		]).
 
 start() ->
@@ -45,6 +46,9 @@ validate_auth(AuthData) ->
 
 get_currency_multiplier() ->
     social_net_api_core:get_currency_multiplier(social_net_api).
+
+set_callback(Callback) ->
+    social_net_api_core:set_callback(social_net_api, Callback).
 
 invoke_method(Method, Args) ->
 	social_net_api_core:invoke_method(social_net_api, Method, Args).
