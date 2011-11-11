@@ -42,7 +42,7 @@ parse_client_options(Options) ->
     {ok, #client_options{app_id     = proplists:get_value(app_id,     Options),
                          secret_key = proplists:get_value(secret_key, Options),
                          viewer_id  = proplists:get_value(viewer_id,  Options),
-                         host       = proplists:get_value(host,       Options)}}.
+                         host       = proplists:get_value(host,       Options, "api.vkontakte.ru")}}.
 
 parse_server_options(Options) ->
     {ok, #server_options{app_id     = proplists:get_value(app_id,     Options),
@@ -66,7 +66,7 @@ invoke_method({secure, Function}, Args, #client_options{app_id=AppID, secret_key
 
     Arguments     = social_net_api_utils:merge(Args, Required),
     UnsignedQuery = social_net_api_utils:concat(Arguments, $=, []) ++ SecretKey,
-    SignedQuery   = social_net_api_utils:concat(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}]), $=, $&),
+    SignedQuery   = mochiweb_util:urlencode(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}])),
 
     Request = "http://" ++ Host ++ "/api.php?" ++ SignedQuery,
 

@@ -41,7 +41,7 @@ get_currency_multiplier() -> 1.
 parse_client_options(Options) ->
     {ok, #client_options{app_id     = proplists:get_value(app_id,     Options),
                          secret_key = proplists:get_value(secret_key, Options),
-                         host       = proplists:get_value(host,       Options)}}.
+                         host       = proplists:get_value(host,       Options, "api.odnoklassniki.ru")}}.
 
 parse_server_options(Options) ->
     {ok, #server_options{app_id     = proplists:get_value(app_id,     Options),
@@ -51,10 +51,8 @@ parse_server_options(Options) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 validate_auth({UserID, UserData, Signature}, #client_options{secret_key=SecretKey}) ->
-    Data = social_net_api_utils:to_list(UserID) ++
-			   social_net_api_utils:to_list(UserData) ++
-			   social_net_api_utils:to_list(SecretKey),
-    case social_net_api_utils:md5_hex(Data, bin) of
+    Data = social_net_api_utils:concat([UserID, UserData, SecretKey]),
+    case social_net_api_utils:md5_hex(Data) of
         Signature -> ok;
         _         -> {error, invalid_signature}
     end.
@@ -66,7 +64,7 @@ invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=
     Required      = [{format, "JSON"}, {application_key, AppID}],
     Arguments     = social_net_api_utils:merge(Args, Required),
     UnsignedQuery = social_net_api_utils:concat(Arguments, $=, []) ++ SecretKey,
-    SignedQuery   = social_net_api_utils:concat(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}]), $=, $&),
+    SignedQuery   = mochiweb_util:urlencode(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}])),
 
     Request = "http://" ++ Host ++ "/api/" ++ Method ++ "?" ++ SignedQuery,
 
