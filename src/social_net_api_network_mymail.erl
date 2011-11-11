@@ -50,7 +50,7 @@ parse_server_options(Options) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 validate_auth({_, UserData, Signature}, #client_options{secret_key=SecretKey}) ->
-    Data = social_net_api_utils:to_list(UserData) ++ social_net_api_utils:to_list(SecretKey),
+    Data = social_net_api_utils:concat([UserData, SecretKey]),
     case social_net_api_utils:md5_hex(Data, bin) of
         Signature -> ok;
         _         -> {error, invalid_signature}
@@ -63,12 +63,12 @@ invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=
     Required      = [{format, "json"}, {secure, 1}, {method, Method}, {app_id, AppID}],
     Arguments     = social_net_api_utils:merge(Args, Required),
     UnsignedQuery = social_net_api_utils:concat(Arguments, $=, []) ++ SecretKey,
-    SignedQuery   = social_net_api_utils:concat(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}]), $=, $&),
+    SignedQuery   = mochiweb_util:urlencode(social_net_api_utils:merge(Arguments, [{sig, social_net_api_utils:md5_hex(UnsignedQuery)}])),
 
     Request = "http://www.appsmail.ru/platform/api" ++ "?" ++ SignedQuery,
 
     case catch(social_net_api_utils:http_request(Request)) of
-        {ok, {{_HttpVer, 200, _Msg}, _Headers, Body}} ->
+        {ok, {_, _, Body}} ->
             mochijson2:decode(Body);
         {error, Reason} ->
             {error, Reason};
