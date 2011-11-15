@@ -28,6 +28,7 @@
     delete/2,
     find/2,
     find/3,
+    concat/1,
     concat/2,
     concat/3,
     to_list/1,
@@ -59,6 +60,9 @@ find(Key, List, integer) ->
         nil -> nil;
         Res -> list_to_integer(Res)
     end.
+
+concat(Args) ->
+    concat(Args, []).
 
 concat(Args, Separator) ->
     lists:flatten(lists:reverse(concat_vals(Args, Separator, []))).
