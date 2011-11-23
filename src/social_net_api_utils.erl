@@ -20,26 +20,7 @@
 %% EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -module(social_net_api_utils).
-
--export
-([
-    merge/2,
-    sort/1,
-    delete/2,
-    find/2,
-    find/3,
-    concat/1,
-    concat/2,
-    concat/3,
-    to_list/1,
-    http_request/1,
-    get_network_module/1,
-    timestamp/0,
-    md5_hex/1,
-    md5_hex/2,
-    call_functor/2,
-    test/0
-]).
+-compile(export_all).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,7 +39,7 @@ find(Key, List) ->
 find(Key, List, integer) ->
     case find(Key, List) of
         nil -> nil;
-        Res -> list_to_integer(Res)
+        Res -> to_integer(Res)
     end.
 
 concat(Args) ->
@@ -87,13 +68,33 @@ concat_pairs([{Key, Value}|Tail], RowSeparator, ColSeparator, Result) ->
     S = [to_list(Key), RowSeparator, to_list(Value), ColSeparator],
     concat_pairs(Tail, RowSeparator, ColSeparator, [S|Result]).
 
-http_request(Request) ->
-    httpc:request(Request).
+split_delivered(Users, Result) when is_binary(Result) ->
+    split_delivered(Users, string:tokens(binary_to_list(Result), ","));
 
-get_network_module(Network) when is_atom(Network) ->
-    list_to_atom( "social_net_api_network_" ++ atom_to_list(Network) ).
+split_delivered(Users, Result) when is_list(Result) ->
+    List1 = ordsets:from_list(lists:sort(lists:map(fun to_integer/1, Users))),
+    List2 = ordsets:from_list(lists:sort(lists:map(fun to_integer/1, Result))),
+    Undelivered = ordsets:subtract(List1, List2),
+    Delivered = ordsets:subtract(List1, Undelivered),
+    {Delivered, Undelivered}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+timestamp() ->
+    now_to_seconds(erlang:now()).
+
+now_to_seconds({Mega, Sec, _}) ->
+    (Mega * 1000000) + Sec.
+
+call_functor({M, F, A}, Args) ->
+    erlang:apply(M, F, Args ++ A);
+call_functor({M, F}, Args) ->
+    erlang:apply(M, F, Args);
+call_functor(Functor, Args) ->
+    erlang:apply(Functor, Args).
+
+to_binary(X) when is_binary(X) -> X;
+to_binary(X) -> list_to_binary(to_list(X)).
 
 to_list(A) when is_list(A)      -> A;
 to_list(A) when is_atom(A)      -> atom_to_list(A);
@@ -101,11 +102,17 @@ to_list(A) when is_integer(A)   -> integer_to_list(A);
 to_list(A) when is_float(A)     -> float_to_list(A);
 to_list(A) when is_binary(A)    -> binary_to_list(A).
 
-timestamp() ->
-    now_to_seconds(erlang:now()).
+to_integer(Int) when is_integer(Int) -> Int;
+to_integer(List) when is_list(List) -> list_to_integer(List);
+to_integer(Binary) when is_binary(Binary) -> to_integer(binary_to_list(Binary)).
 
-now_to_seconds({Mega, Sec, _}) ->
-    (Mega * 1000000) + Sec.
+split(N, List) ->
+    split(N, List, []).
+split(N, List, Res) when is_list(List), length(List) =< N ->
+    lists:reverse([List|Res]);
+split(N, List, Res) when is_list(List), length(List)  > N ->
+    {L1, L2} = lists:split(N, List),
+    split(N, L2, [L1|Res]).
 
 md5_hex(Data) ->
     md5_hex(Data, bin).
@@ -128,22 +135,17 @@ int_to_hex(N) when N < 256 ->
 hex(N) when N < 10 -> $0+N;
 hex(N) when N >= 10, N < 16 -> $a + (N-10).
 
-call_functor({M, F, A}, Args) ->
-    erlang:apply(M, F, Args ++ A);
-call_functor({M, F}, Args) ->
-    erlang:apply(M, F, Args);
-call_functor(Functor, Args) ->
-    erlang:apply(Functor, Args).
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -include_lib("eunit/include/eunit.hrl").
 
 test() ->
-    ?assertEqual(social_net_api_utils:concat([], $-), []),
-    ?assertEqual(social_net_api_utils:concat([a], $-), "a"),
-    ?assertEqual(social_net_api_utils:concat([a, b], $-), "a-b"),
-    ?assertEqual(social_net_api_utils:concat([a, b, c], $-), "a-b-c"),
-    ?assertEqual(social_net_api_utils:concat([{a, x}, {b,y},{c,z}], $=, $;), "a=x;b=y;c=z"),
+    ?assertEqual(concat([], $-), []),
+    ?assertEqual(concat([a], $-), "a"),
+    ?assertEqual(concat([a, b], $-), "a-b"),
+    ?assertEqual(concat([a, b, c], $-), "a-b-c"),
+    ?assertEqual(concat([{a, x}, {b,y},{c,z}], $=, $;), "a=x;b=y;c=z"),
+    ?assertEqual(md5_hex("Hex is not working?", list),   "a574ec8a309cc5b1512599ec738aaf0a"),
+    ?assertEqual(md5_hex("Hello!"),                    <<"952d2c56d0485958336747bcdd98590d">>),
+    ?assertEqual(md5_hex("This is a hash, baby!"),     <<"873c569a197a722942ed7d38361a6bdd">>),
     ok.

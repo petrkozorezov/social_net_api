@@ -21,123 +21,54 @@
 
 -module(social_net_api_server).
 
--include_lib("logger.hrl").
-
--export
-([
-    init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    code_change/3,
-    terminate/2
-]).
-
--export
-([
-    set_callback/2,
-    start_link/1,
-    start_link/2,
-    stop/1,
-    stop/2,
-    test/0
-]).
-
--record(state, {pid, module, callback, data}).
+-export([start_link/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
+-export([set_payment_callback/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start_link(Options)        -> gen_server:start_link( ?MODULE, Options, [] ).
-start_link(Name, Options)  -> gen_server:start_link( Name, ?MODULE, Options, [] ).
-stop(Pid)                  -> stop(Pid, shutdown).
-stop(Pid, Reason)          -> gen_server:call(Pid, {shutdown, Reason}, infinity).
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-set_callback(Pid, Callback) ->
-    gen_server:call(Pid, {set_callback, Callback}).
+set_payment_callback(Callback) ->
+    gen_server:call(?MODULE, {set_payment_callback, Callback}).
 
-init(Options) ->
-    process_flag(trap_exit, true),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    Network  = proplists:get_value(network,  Options),
-    IP       = proplists:get_value(ip,       Options),
-    Port     = proplists:get_value(port,     Options),
-    Callback = proplists:get_value(callback, Options),
-
-    Module = social_net_api_utils:get_network_module(Network),
-
+init([]) ->
     Self = self(),
-    Loop = fun(Request) -> gen_server:call(Self, {payment, Request}) end,
+    Loop =
+    fun(Request) ->
+        Request:ok( gen_server:call(Self, {payment, Request:parse_qs()}) )
+    end,
+    {ok, _} = mochiweb_http:start_link
+    ([
+        {ip,   social_net_api_settings:server_host()},
+        {port, social_net_api_settings:server_port()},
+        {loop, Loop}
+    ]),
+    Module = social_net_api_settings:network_mod(),
+    {ok, Module:init_server()}.
 
-    ?LOG_INFO(": starting social server at ~p:~p", [IP, Port]),
-    {ok, Pid} = mochiweb_http:start([{ip, IP}, {port, Port}, {loop, Loop}, {acceptor_pool_size, 1}]),
+handle_call({set_payment_callback, Callback}, _, State) ->
+    social_net_api_settings:set_payment_callback(Callback),
+    {reply, ok, State};
 
-    {ok, Data} = Module:parse_server_options(Options),
+handle_call({payment, Args}, _, State) ->
+    Module = social_net_api_settings:network_mod(),
+    {Response, NewState} = Module:process_payment(Args, State),
+    {reply, Response, NewState}.
 
-    {ok, #state{pid=Pid, module=Module, callback=Callback, data=Data}}.
-
-handle_call({payment, Request}, From, State=#state{module=Module, callback=Callback, data=Data}) ->
-    spawn( fun() -> gen_server:reply(From, Module:process_payment(Request, Callback, Data)) end ),
-    {noreply, State};
-
-handle_call({set_callback, Callback}, _, State=#state{}) ->
-    {reply, ok, State#state{callback=Callback}};
-
-handle_call({shutdown, Reason}, _From, State=#state{pid=Pid}) ->
-    ?LOG_DEBUG(": stopping social server...", []),
-    ok = mochiweb_http:stop(Pid),
-    {stop, Reason, ok, State};
-
-handle_call(Msg, _From, State) ->
-    ?LOG_ERROR(": unexpected call received: ~p", [Msg]),
+handle_cast(_, State) ->
     {noreply, State}.
 
-handle_cast(Msg, State) ->
-    ?LOG_ERROR(": unexpected cast received: ~p", [Msg]),
+handle_info(_, State) ->
     {noreply, State}.
 
-handle_info( {'EXIT', _Pid, _Msg}, State ) ->
-    ?LOG_INFO(": exit signal received from ~p: ~p", [_Pid, _Msg]),
-    {noreply, State};
+code_change(_, State, _) ->
+    {ok, State}.
 
-handle_info( Msg, State ) ->
-    ?LOG_ERROR(": unexpected info received: ~p", [Msg]),
-    {noreply, State}.
-
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-terminate(Reason, _State) ->
-    ?LOG_DEBUG(": terminated with reason ~p", [Reason]),
+terminate(_, _) ->
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--include_lib("eunit/include/eunit.hrl").
-
-test() ->
-    PaymentCallback = fun(Req) -> ?LOG_DEBUG(": Payment request received: ~p", [Req]), ok end,
-
-    Options = [ {network,           mymail},
-                {ip,                "0.0.0.0"},
-                {port,              54160},
-                {app_id,            "607061"},
-                {secret_key,        "3485e5c90e1687b7e1eeceedf1303830"},
-                {callback,          PaymentCallback},
-                {mode,              parsed} ],
-
-    OldVal = process_flag(trap_exit, true),
-    R = case ?MODULE:start_link(Options) of
-        {ok, Pid} ->
-
-            receive after 60000 -> noop end,
-
-            ?assertEqual(ok,   ?MODULE:stop(Pid)),
-            receive {'EXIT', Pid, shutdown} -> ok;
-                    {'EXIT', Pid, _}        -> {error, invalid_shutdown_reason}
-            after 5000 ->
-                {error, shutdown_timeout}
-            end;
-        Err ->
-            Err
-    end,
-    process_flag(trap_exit, OldVal),
-    ?LOG_INFO(": testing ~p : ~p", [?MODULE, R]), R.

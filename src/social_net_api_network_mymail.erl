@@ -23,33 +23,28 @@
 
 -export
 ([
-    get_currency_multiplier/0,
-    parse_client_options/1,
-    parse_server_options/1,
-    validate_auth/2,
+    init_client/0,
+    init_server/0,
+    validate_auth/1,
     invoke_method/3,
-    process_payment/3
+    send_message/3,
+    process_payment/2,
+    get_currency_multiplier/0
 ]).
 
--record(client_options, {app_id, secret_key}).
--record(server_options, {app_id, secret_key, mode}).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init_client() -> undefined.
+init_server() -> undefined.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_currency_multiplier() -> 1.
 
-parse_client_options(Options) ->
-    {ok, #client_options{app_id     = proplists:get_value(app_id,     Options),
-                         secret_key = proplists:get_value(secret_key, Options)}}.
-
-parse_server_options(Options) ->
-    {ok, #server_options{app_id     = proplists:get_value(app_id,     Options),
-                         secret_key = proplists:get_value(secret_key, Options),
-                         mode       = proplists:get_value(mode,       Options, parsed)}}.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-validate_auth({_, UserData, Signature}, #client_options{secret_key=SecretKey}) ->
+validate_auth({_, UserData, Signature}) ->
+    SecretKey = social_net_api_settings:secret_key(),
     Data = social_net_api_utils:concat([UserData, SecretKey]),
     case social_net_api_utils:md5_hex(Data, bin) of
         Signature -> ok;
@@ -58,8 +53,12 @@ validate_auth({_, UserData, Signature}, #client_options{secret_key=SecretKey}) -
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=SecretKey}) ->
-    Method        = social_net_api_utils:concat([{atom_to_list(Group), atom_to_list(Function)}], $., []),
+invoke_method({Group, Function}, Args, State) ->
+
+    AppID         = social_net_api_settings:app_id(),
+    SecretKey     = social_net_api_settings:secret_key(),
+
+    Method        = social_net_api_utils:concat([Group, Function], $.),
     Required      = [{format, "json"}, {secure, 1}, {method, Method}, {app_id, AppID}],
     Arguments     = social_net_api_utils:merge(Args, Required),
     UnsignedQuery = social_net_api_utils:concat(Arguments, $=, []) ++ SecretKey,
@@ -67,29 +66,62 @@ invoke_method({Group, Function}, Args, #client_options{app_id=AppID, secret_key=
 
     Request = "http://www.appsmail.ru/platform/api" ++ "?" ++ SignedQuery,
 
-    case catch(social_net_api_utils:http_request(Request)) of
+    case catch(httpc:request(Request)) of
         {ok, {_, _, Body}} ->
-            mochijson2:decode(Body);
+            {mochijson2:decode(Body), State};
         {error, Reason} ->
-            {error, Reason};
+            {{error, Reason}, State};
         Unexpected ->
-            {error, unexpected_response, Unexpected}
+            {{error, {unexpected_response, Unexpected}}, State}
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_payment(Request, Callback, #server_options{app_id=AppID, secret_key=SecretKey, mode=Mode}) ->
-    Args = Request:parse_qs(),
+send_message(Message, Users, State) ->
+    Fun =
+    fun(UserList, {Acc, TmpState}) ->
+        {Reply, NewState} = do_send(Message, UserList, TmpState),
+        {[Reply|Acc], NewState}
+    end,
+    {Result, NewState} = lists:foldl(Fun, {[], State}, social_net_api_utils:split(200, Users)),
+    {lists:concat(lists:reverse(Result)), NewState}.
+
+do_send(Message, Users, State) ->
+    Method = {notifications, send},
+    Args   = [{uids, social_net_api_utils:concat(Users, $,)}, {text, Message}],
+    {Result, NewState} = invoke_method(Method, Args, State),
+    {parse_response(Users, Result), NewState}.
+
+parse_response(Users, {struct, [{<<"error">>, {struct, ErrorInfo}}]}) ->
+    Code = proplists:get_value(<<"error_code">>, ErrorInfo),
+    Message = proplists:get_value(<<"error_msg">>, ErrorInfo),
+    lists:zip(Users, lists:duplicate(length(Users), {error, {Code, Message}}));
+
+parse_response(Users, Result) when is_list(Result) ->
+    {Delivered, Undelivered} = social_net_api_utils:split_delivered(Users, Result),
+    lists:zip(Delivered, lists:duplicate(length(Delivered), ok)) ++
+    lists:zip(Undelivered, lists:duplicate(length(Undelivered), {error, undelivered})).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+process_payment(Args, State) ->
+    AppID       = social_net_api_settings:app_id(),
+    SecretKey   = social_net_api_settings:secret_key(),
+    Callback    = social_net_api_settings:payment_callback(),
+    Mode        = social_net_api_settings:server_mode(parsed),
+    Response =
     case validate_keys(AppID, SecretKey, Args) of
         ok ->
             case invoke_callback(Mode, Callback, Args) of
-                ok                              -> send_response(Request, ok);
-                {error, Err} when is_atom(Err)  -> send_response(Request, {error, Err});
-                _                               -> send_response(Request, {error, invalid_response})
+                ok                              -> response(ok);
+                {error, Err} when is_atom(Err)  -> response({error, Err});
+                _                               -> response({error, invalid_response})
             end;
-        {error, Err} when is_atom(Err)          -> send_response(Request, {error, Err});
-        _                                       -> send_response(Request, {error, invalid_response})
-    end.
+        {error, Err} when is_atom(Err)          -> response({error, Err});
+        _                                       -> response({error, invalid_response})
+    end,
+    {Response, State}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -127,29 +159,29 @@ invoke_callback(parsed, Callback, Args) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-send_response(Request, {Status, 0}) when is_integer(Status) ->
+response({Status, 0}) when is_integer(Status) ->
     Success = "{\r\n  \"status\" : \"~p\"\r\n}\r\n",
     Response = lists:flatten( io_lib:format(Success, [Status]) ),
-    Request:ok({"application/json", Response});
+    {"application/json", Response};
 
-send_response(Request, {Status, Code}) when is_integer(Status), is_integer(Code) ->
+response({Status, Code}) when is_integer(Status), is_integer(Code) ->
     Error = "{\r\n  \"status\" : \"~p\",\r\n  \"error_code\" : \"~p\"\r\n}\r\n",
     Response = lists:flatten( io_lib:format(Error,   [Status, Code]) ),
-    Request:ok({"application/json", Response});
+    {"application/json", Response};
 
-send_response(Request, ok) ->
-    send_response(Request, {1, 0});
+response(ok) ->
+    response({1, 0});
 
-send_response(Request, {error, invalid_app_id}) ->
-    send_response(Request, {2, 700});
+response({error, invalid_app_id}) ->
+    response({2, 700});
 
-send_response(Request, {error, invalid_signature}) ->
-    send_response(Request, {2, 700});
+response({error, invalid_signature}) ->
+    response({2, 700});
 
-send_response(Request, {error, retry}) ->
-    send_response(Request, {0, 701});
+response({error, retry}) ->
+    response({0, 701});
 
-send_response(Request, {error, _}) ->
-    send_response(Request, {2, 700}).
+response({error, _}) ->
+    response({2, 700}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

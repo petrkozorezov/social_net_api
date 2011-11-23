@@ -23,7 +23,7 @@
  [
   {description, "Social net api client"},
   {vsn, "1"},
-  {registered, []},
+  {registered, [social_net_api_client, social_net_api_server]},
   {applications, [
                   kernel,
                   stdlib,

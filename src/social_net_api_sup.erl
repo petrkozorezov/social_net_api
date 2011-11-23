@@ -20,32 +20,50 @@
 %% EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -module(social_net_api_sup).
-
 -behaviour(supervisor).
 
-%% API
--export([start_link/0]).
+-export([start_link/0, init/1]).
+-export([validate_auth/1, send_message/2, invoke_method/2, set_payment_callback/1, get_currency_multiplier/1]).
 
-%% Supervisor callbacks
--export([init/1]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Options), {I, {I, start_link, Options}, permanent, 5000, worker, [I]}).
+-define(CHILD(I), {I, {I, start_link, []}, permanent, 5000, worker, [I]}).
 
-%% ===================================================================
-%% API functions
-%% ===================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+validate_auth(AuthData) ->
+    social_api_client:validate_auth(AuthData).
+
+send_message(Message, Users) ->
+    social_api_client:send_message(Message, Users).
+
+invoke_method(Method, Args) ->
+    social_api_client:invoke_method(Method, Args).
+
+set_payment_callback(Callback) ->
+    social_api_server:set_payment_callback(Callback).
+
+get_currency_multiplier() ->
+    social_api_client:get_currency_multiplier().
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% ===================================================================
-%% Supervisor callbacks
-%% ===================================================================
+init(_) ->
+    Spec = [{client, social_api_client}, {server, social_api_server}],
+    Modules = [ Module || {Name, Module} <- Spec, has_env(Name) ],
+    {ok, { {one_for_one, 5, 10},
+        lists:map(fun(Module) -> ?CHILD(Module) end, Modules)
+    } }.
 
-init([]) ->
-    Config = application:get_all_env(),
-    {ok, { {one_for_one, 5, 10}, [
-        ?CHILD(social_net_api_core, [{local, social_net_api}, Config])
-    ]} }.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+has_env(Env) ->
+    case application:get_env(Env) of
+        {ok, _} -> true;
+        _       -> false
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
