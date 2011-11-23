@@ -41,7 +41,7 @@ invoke_method(Method, Args) ->
     social_net_api_client:invoke_method(Method, Args).
 
 set_payment_callback(Callback) ->
-    social_net_api_server:set_payment_callback(Callback).
+    social_net_api_settings:set_payment_callback(Callback).
 
 get_currency_multiplier() ->
     social_net_api_client:get_currency_multiplier().
@@ -52,9 +52,16 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init(_) ->
-    {ok, { {one_for_one, 5, 10}, [
-        ?CHILD(social_net_api_client),
-        ?CHILD(social_net_api_server)
-    ]} }.
+    Spec = [{client, social_net_api_client}, {server, social_net_api_server}],
+    Modules = [ Module || {Name, Module} <- Spec, has_env(Name) ],
+    {ok, { {one_for_one, 5, 10},
+        lists:map(fun(Module) -> ?CHILD(Module) end, Modules)
+    } }.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+has_env(Env) ->
+    case application:get_env(Env) of
+        {ok, _} -> true;
+        _       -> false
+   end.

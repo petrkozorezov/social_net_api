@@ -23,15 +23,11 @@
 
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
--export([set_payment_callback/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
-set_payment_callback(Callback) ->
-    gen_server:call(?MODULE, {set_payment_callback, Callback}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -42,10 +38,6 @@ init([]) ->
     end,
     Module = social_net_api_settings:network_mod(),
     {ok, Module:init_server()}.
-
-handle_call({set_payment_callback, Callback}, _, State) ->
-    social_net_api_settings:set_payment_callback(Callback),
-    {reply, ok, State};
 
 handle_call({payment, Args}, _, State) ->
     Module = social_net_api_settings:network_mod(),
