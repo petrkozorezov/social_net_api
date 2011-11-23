@@ -21,47 +21,53 @@
 
 -module(social_net_api).
 
-%% API
--export([
-		 start/0,
-		 stop/0,
-		 validate_auth/1,
-		 invoke_method/2,
-         get_currency_multiplier/0,
-         set_callback/1
-		]).
+-export
+([
+    stop/0,
+    start/0,
+    validate_auth/1,
+    send_message/2,
+    invoke_method/2,
+    set_payment_callback/1,
+    get_currency_multiplier/0
+]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start() ->
-	application:load(?MODULE),
-	ensure_deps_started(),
-	application:start(?MODULE).
+    application:load(?MODULE),
+    ensure_deps_started(),
+    application:start(?MODULE).
 
 stop() ->
-	application:stop(?MODULE).
+    application:stop(?MODULE).
 
-%% AuthData :: {UserID, UserData, Signature} ->
-%% ok | {error, Reason}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 validate_auth(AuthData) ->
-	social_net_api_core:validate_auth(social_net_api, AuthData).
+    social_net_api_sup:validate_auth(AuthData).
 
-get_currency_multiplier() ->
-    social_net_api_core:get_currency_multiplier(social_net_api).
-
-set_callback(Callback) ->
-    social_net_api_core:set_callback(social_net_api, Callback).
+send_message(Message, Users) ->
+    social_net_api_sup:send_message(Message, Users).
 
 invoke_method(Method, Args) ->
-	social_net_api_core:invoke_method(social_net_api, Method, Args).
+    social_net_api_sup:invoke_method(Method, Args).
+
+set_payment_callback(Callback) ->
+    social_net_api_sup:set_payment_callback(Callback).
+
+get_currency_multiplier() ->
+    social_net_api_sup:get_currency_multiplier().
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ensure_started(App) ->
     case application:start(App) of
-        ok ->
-            ok;
-        {error, {already_started, App}} ->
-            ok
+        ok                              -> ok;
+        {error, {already_started, App}} -> ok
     end.
 
 ensure_deps_started() ->
-	{ok, DepsList} = application:get_key(?MODULE, applications),
-	[ensure_started(App) || App <-DepsList],
-	ok.
+    {ok, DepsList} = application:get_key(?MODULE, applications),
+    lists:foreach( fun ensure_started/1, DepsList ).
+
