@@ -36,17 +36,10 @@ set_payment_callback(Callback) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init([]) ->
-    Self = self(),
-    Loop =
-    fun(Request) ->
-        Request:ok( gen_server:call(Self, {payment, Request:parse_qs()}) )
+    case social_net_api_settings:has_server() of
+        true  -> start_http_server();
+        false -> ok
     end,
-    {ok, _} = mochiweb_http:start_link
-    ([
-        {ip,   social_net_api_settings:server_host()},
-        {port, social_net_api_settings:server_port()},
-        {loop, Loop}
-    ]),
     Module = social_net_api_settings:network_mod(),
     {ok, Module:init_server()}.
 
@@ -72,3 +65,12 @@ terminate(_, _) ->
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+start_http_server() ->
+    Self = self(),
+    mochiweb_http:start_link
+    ([
+        {ip,   social_net_api_settings:server_host()},
+        {port, social_net_api_settings:server_port()},
+        {loop, fun(Request) -> Request:ok( gen_server:call(Self, {payment, Request:parse_qs()}) ) end}
+    ]).

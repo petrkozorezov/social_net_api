@@ -28,6 +28,9 @@
     secret_key/0,
     network_mod/0,
 
+    has_client/0,
+    has_server/0,
+
     server_host/0,
     server_port/0,
     server_mode/0,
@@ -50,6 +53,9 @@ app_id() -> get_env_strict(app_id).
 network() -> get_env_strict(network).
 secret_key() -> get_env_strict(secret_key).
 network_mod() -> list_to_atom( "social_net_api_network_" ++ atom_to_list(network()) ).
+
+has_client() -> get_env(client) =/= undefined.
+has_server() -> get_env(server) =/= undefined.
 
 server_host() -> get_env_strict(server, host).
 server_port() -> get_env_strict(server, port).
@@ -76,6 +82,12 @@ get_env_strict(Env) ->
         Value     -> Value
     end.
 
+get_env_default(Env, Default) ->
+    case get_env(Env) of
+        undefined -> Default;
+        Value     -> Value
+    end.
+
 get_env_strict(Env, Name) ->
     case proplists:get_value(Name, get_env_strict(Env)) of
         undefined -> exit(invalid_settings);
@@ -94,6 +106,6 @@ set_env(Env, Value) ->
     application:set_env(?APPLICATION, Env, Value).
 
 set_env(Env, Name, Value) ->
-    set_env(Env, lists:keystore(Name, 1, get_env_strict(Env), {Name, Value})).
+    set_env(Env, lists:keystore(Name, 1, get_env_default(Env, []), {Name, Value})).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
