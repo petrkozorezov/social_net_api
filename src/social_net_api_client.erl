@@ -59,10 +59,7 @@ handle_call({invoke_method, Method, Args}, _, State) ->
 handle_call({send_message, Message, Users}, _, State) ->
     Module = social_net_api_settings:network_mod(),
     {Reply, NewState} = Module:send_message(Message, Users, State),
-    {reply, Reply, NewState};
-
-handle_call(get_currency_multiplier, _, State) ->
-    {reply, Module:get_currency_multiplier(), State}.
+    {reply, Reply, NewState}.
 
 handle_cast(_, State) ->
     {noreply, State}.

@@ -49,7 +49,7 @@
 app_id() -> get_env_strict(app_id).
 network() -> get_env_strict(network).
 secret_key() -> get_env_strict(secret_key).
-network_mod() -> list_to_atom( "social_net_api_" ++ atom_to_list(network()) ).
+network_mod() -> list_to_atom( "social_net_api_network_" ++ atom_to_list(network()) ).
 
 server_host() -> get_env_strict(server, host).
 server_port() -> get_env_strict(server, port).

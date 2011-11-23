@@ -1,9 +1,9 @@
 %% Copyright (c), 2011 Drimmi (http://www.drimmi.com)
 %% All rights reserved.
-%% 
+%%
 %% Redistribution and use in source and binary forms, with or without modification,
 %% are permitted provided that the following conditions are met:
-%% 
+%%
 %% Redistributions of source code must retain the above copyright notice,
 %% this list of conditions and the following disclaimer.
 %% Redistributions in binary form must reproduce the above copyright notice,
@@ -23,7 +23,7 @@
 -behaviour(supervisor).
 
 -export([start_link/0, init/1]).
--export([validate_auth/1, send_message/2, invoke_method/2, set_payment_callback/1, get_currency_multiplier/1]).
+-export([validate_auth/1, send_message/2, invoke_method/2, set_payment_callback/1, get_currency_multiplier/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,19 +32,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 validate_auth(AuthData) ->
-    social_api_client:validate_auth(AuthData).
+    social_net_api_client:validate_auth(AuthData).
 
 send_message(Message, Users) ->
-    social_api_client:send_message(Message, Users).
+    social_net_api_client:send_message(Message, Users).
 
 invoke_method(Method, Args) ->
-    social_api_client:invoke_method(Method, Args).
+    social_net_api_client:invoke_method(Method, Args).
 
 set_payment_callback(Callback) ->
-    social_api_server:set_payment_callback(Callback).
+    social_net_api_server:set_payment_callback(Callback).
 
 get_currency_multiplier() ->
-    social_api_client:get_currency_multiplier().
+    social_net_api_client:get_currency_multiplier().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,7 +52,7 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init(_) ->
-    Spec = [{client, social_api_client}, {server, social_api_server}],
+    Spec = [{client, social_net_api_client}, {server, social_net_api_server}],
     Modules = [ Module || {Name, Module} <- Spec, has_env(Name) ],
     {ok, { {one_for_one, 5, 10},
         lists:map(fun(Module) -> ?CHILD(Module) end, Modules)
