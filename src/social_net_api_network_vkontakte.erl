@@ -26,7 +26,6 @@
     init_client/0,
     init_server/0,
     validate_auth/1,
-    validate_auth/3,
     invoke_method/3,
     send_message/3,
     get_currency_multiplier/0
@@ -43,12 +42,9 @@ get_currency_multiplier() -> 100.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-validate_auth(AuthData) ->
+validate_auth({UserID, _, Signature}) ->
     AppID         = social_net_api_settings:app_id(),
     SecretKey     = social_net_api_settings:secret_key(),
-	validate_auth(AppID, SecretKey, AuthData).
-
-validate_auth(AppID, SecretKey, {UserID, _, Signature}) ->
     Data = social_net_api_utils:concat([AppID, UserID, SecretKey], $_),
     case social_net_api_utils:md5_hex(Data) of
         Signature -> ok;
