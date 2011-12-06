@@ -43,8 +43,11 @@ get_currency_multiplier() -> 1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-validate_auth({UserID, UserData, Signature}) ->
+validate_auth(AuthData) ->
     SecretKey = social_net_api_settings:secret_key(),
+	validate_auth(fake_app_id, SecretKey, AuthData).
+
+validate_auth(_,  SecretKey, {UserID, UserData, Signature}) ->
     Data = social_net_api_utils:concat([UserID, UserData, SecretKey]),
     case social_net_api_utils:md5_hex(Data) of
         Signature -> ok;
