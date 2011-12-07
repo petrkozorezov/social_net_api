@@ -26,6 +26,7 @@
     init_client/0,
     init_server/0,
     validate_auth/1,
+    validate_auth/3,
     invoke_method/3,
     send_message/3,
     get_currency_multiplier/0
