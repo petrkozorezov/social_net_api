@@ -36,6 +36,9 @@
     server_mode/0,
     server_mode/1,
 
+    info_callback/0,
+    set_info_callback/1,
+
     payment_callback/0,
     set_payment_callback/1,
 
@@ -61,6 +64,9 @@ server_host() -> get_env_strict(server, host).
 server_port() -> get_env_strict(server, port).
 server_mode() -> get_env_strict(server, mode).
 server_mode(Def) -> get_env_default(server, mode, Def).
+
+info_callback() -> get_env_strict(server, info_callback).
+set_info_callback(Callback) -> set_env(server, info_callback, Callback).
 
 payment_callback() -> get_env_strict(server, callback).
 set_payment_callback(Callback) -> set_env(server, callback, Callback).

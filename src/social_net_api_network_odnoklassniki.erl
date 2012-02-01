@@ -106,7 +106,7 @@ parse_response(UserID, {struct,ErrorInfo}) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_payment(Args, State) ->
+process_payment({Args,_}, State) ->
     AppID       = social_net_api_settings:app_id(),
     SecretKey   = social_net_api_settings:secret_key(),
     Callback    = social_net_api_settings:payment_callback(),
