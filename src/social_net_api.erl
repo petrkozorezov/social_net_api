@@ -28,6 +28,7 @@
     validate_auth/1,
     send_message/2,
     invoke_method/2,
+    set_info_callback/1,
     set_payment_callback/1,
     get_currency_multiplier/0
 ]).
@@ -52,6 +53,9 @@ send_message(Message, Users) ->
 
 invoke_method(Method, Args) ->
     social_net_api_sup:invoke_method(Method, Args).
+
+set_info_callback(Callback) ->
+    social_net_api_sup:set_info_callback(Callback).
 
 set_payment_callback(Callback) ->
     social_net_api_sup:set_payment_callback(Callback).
