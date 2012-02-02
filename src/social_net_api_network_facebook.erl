@@ -93,7 +93,7 @@ handle_request("payments_status_update", Request) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 invoke_callback(raw, Callback, Request) ->
-    social_net_api_utils:call_functor(Callback, [Request]);
+    catch social_net_api_utils:call_functor(Callback, [Request]);
 
 invoke_callback(parsed, Callback, Request) ->
     {ok, {Details}} = json:decode(proplists:get_value(<<"order_details">>, Request)),

@@ -143,7 +143,7 @@ validate_keys(AppID, SecretKey, Args) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 invoke_callback(raw, Callback, Args) ->
-    social_net_api_utils:call_functor(Callback, [Args]);
+    catch social_net_api_utils:call_functor(Callback, [Args]);
 
 invoke_callback(parsed, Callback, Args) ->
     TransactionID   = social_net_api_utils:find("transaction_id", Args),
