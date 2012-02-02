@@ -98,10 +98,10 @@ invoke_callback(raw, Callback, Request) ->
 invoke_callback(parsed, Callback, Request) ->
     {ok, {Details}} = json:decode(proplists:get_value(<<"order_details">>, Request)),
     [{Item}] = proplists:get_value(<<"items">>, Details),
-    UID             = social_net_api_utils:find(<<"buyer">>, Details),
-    TransactionID   = social_net_api_utils:find(<<"order_id">>, Details),
-    ProductCode     = social_net_api_utils:find(<<"item_id">>, Item),
-    Amount          = social_net_api_utils:find(<<"amount">>, Details),
+    UID             = drimmi_ecore_utils:to_list(social_net_api_utils:find(<<"buyer">>, Details)),
+    TransactionID   = drimmi_ecore_utils:to_list(social_net_api_utils:find(<<"order_id">>, Details)),
+    ProductCode     = drimmi_ecore_utils:to_list(social_net_api_utils:find(<<"item_id">>, Item)),
+    Amount          = drimmi_ecore_utils:to_list(social_net_api_utils:find(<<"amount">>, Details)),
     ProductOption   = nil,
     Profit          = nil,
     invoke_callback(raw, Callback, {{TransactionID, UID}, {ProductCode, ProductOption}, {Amount, Profit}}).
