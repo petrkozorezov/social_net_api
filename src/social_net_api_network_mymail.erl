@@ -46,7 +46,7 @@ get_currency_multiplier() -> 1.
 
 validate_auth(AuthData) ->
     SecretKey = social_net_api_settings:secret_key(),
-	validate_auth(fake_app_id, SecretKey, AuthData).
+    validate_auth(fake_app_id, SecretKey, AuthData).
 
 validate_auth(_,  SecretKey, {_, UserData, Signature}) ->
     Data = social_net_api_utils:concat([UserData, SecretKey]),

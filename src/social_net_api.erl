@@ -26,6 +26,7 @@
     stop/0,
     start/0,
     validate_auth/1,
+    generate_auth/1,
     send_message/2,
     invoke_method/2,
     set_info_callback/1,
@@ -45,26 +46,6 @@ stop() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-validate_auth(AuthData) ->
-    social_net_api_sup:validate_auth(AuthData).
-
-send_message(Message, Users) ->
-    social_net_api_sup:send_message(Message, Users).
-
-invoke_method(Method, Args) ->
-    social_net_api_sup:invoke_method(Method, Args).
-
-set_info_callback(Callback) ->
-    social_net_api_sup:set_info_callback(Callback).
-
-set_payment_callback(Callback) ->
-    social_net_api_sup:set_payment_callback(Callback).
-
-get_currency_multiplier() ->
-    social_net_api_sup:get_currency_multiplier().
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 ensure_started(App) ->
     case application:start(App) of
         ok                              -> ok;
@@ -75,3 +56,27 @@ ensure_deps_started() ->
     {ok, DepsList} = application:get_key(?MODULE, applications),
     lists:foreach( fun ensure_started/1, DepsList ).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+validate_auth(AuthData) ->
+    social_net_api_client:validate_auth(AuthData).
+
+generate_auth(AuthData) ->
+    social_net_api_client:generate_auth(AuthData).
+
+send_message(Message, Users) ->
+    social_net_api_client:send_message(Message, Users).
+
+invoke_method(Method, Args) ->
+    social_net_api_client:invoke_method(Method, Args).
+
+set_info_callback(Callback) ->
+    social_net_api_settings:set_info_callback(Callback).
+
+set_payment_callback(Callback) ->
+    social_net_api_settings:set_payment_callback(Callback).
+
+get_currency_multiplier() ->
+    social_net_api_client:get_currency_multiplier().
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

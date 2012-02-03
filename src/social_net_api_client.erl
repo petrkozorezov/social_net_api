@@ -34,6 +34,10 @@ validate_auth(AuthData) ->
     Module = social_net_api_settings:network_mod(),
     Module:validate_auth(AuthData).
 
+generate_auth(AuthData) ->
+    Module = social_net_api_settings:network_mod(),
+    Module:generate_auth(AuthData).
+
 get_currency_multiplier() ->
     Module = social_net_api_settings:network_mod(),
     Module:get_currency_multiplier().

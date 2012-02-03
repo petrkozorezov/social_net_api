@@ -24,15 +24,18 @@
 
 -export
 ([
+    init_client/0,
     init_server/0,
     validate_auth/1,
     validate_auth/3,
+    generate_auth/1,
     process_payment/2,
     get_currency_multiplier/0
 ]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+init_client() -> undefined.
 init_server() -> undefined.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,6 +43,12 @@ init_server() -> undefined.
 get_currency_multiplier() -> 1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+generate_auth(AuthData) ->
+    AppID         = social_net_api_settings:app_id(),
+    SecretKey     = social_net_api_settings:secret_key(),
+    Data = social_net_api_utils:concat([AppID, AuthData, SecretKey]),
+    social_net_api_utils:md5_hex(Data).
 
 validate_auth(AuthData) ->
     AppID         = social_net_api_settings:app_id(),
