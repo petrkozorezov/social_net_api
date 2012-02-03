@@ -56,7 +56,7 @@ validate_auth(AuthData) ->
     validate_auth(AppID, SecretKey, AuthData).
 
 validate_auth(AppID, SecretKey, {UserID, _, Signature}) ->
-    Data = social_net_api_utils:concat([AppID, UserID, SecretKey], $_),
+    Data = social_net_api_utils:concat([AppID, UserID, SecretKey]),
     case social_net_api_utils:md5_hex(Data) of
         Signature -> ok;
         _         -> {error, invalid_signature}
