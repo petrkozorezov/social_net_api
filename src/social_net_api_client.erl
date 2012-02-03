@@ -23,7 +23,7 @@
 
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
--export([validate_auth/1, invoke_method/2, send_message/2, get_currency_multiplier/0]).
+-export([generate_auth/1, validate_auth/1, invoke_method/2, send_message/2, get_currency_multiplier/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -33,6 +33,10 @@ start_link() ->
 validate_auth(AuthData) ->
     Module = social_net_api_settings:network_mod(),
     Module:validate_auth(AuthData).
+
+generate_auth(AuthData) ->
+    Module = social_net_api_settings:network_mod(),
+    Module:generate_auth(AuthData).
 
 get_currency_multiplier() ->
     Module = social_net_api_settings:network_mod(),

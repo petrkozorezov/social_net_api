@@ -46,7 +46,7 @@ get_currency_multiplier() -> 1.
 
 validate_auth(AuthData) ->
     SecretKey = social_net_api_settings:secret_key(),
-	validate_auth(fake_app_id, SecretKey, AuthData).
+    validate_auth(fake_app_id, SecretKey, AuthData).
 
 validate_auth(_,  SecretKey, {_, UserData, Signature}) ->
     Data = social_net_api_utils:concat([UserData, SecretKey]),
@@ -109,7 +109,7 @@ parse_response(Users, Result) when is_list(Result) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_payment(Args, State) ->
+process_payment({Args,_}, State) ->
     AppID       = social_net_api_settings:app_id(),
     SecretKey   = social_net_api_settings:secret_key(),
     Callback    = social_net_api_settings:payment_callback(),
@@ -146,7 +146,7 @@ validate_keys(AppID, SecretKey, Args) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 invoke_callback(raw, Callback, Args) ->
-    social_net_api_utils:call_functor(Callback, [Args]);
+    catch social_net_api_utils:call_functor(Callback, [Args]);
 
 invoke_callback(parsed, Callback, Args) ->
 

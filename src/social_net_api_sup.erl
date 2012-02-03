@@ -23,28 +23,10 @@
 -behaviour(supervisor).
 
 -export([start_link/0, init/1]).
--export([validate_auth/1, send_message/2, invoke_method/2, set_payment_callback/1, get_currency_multiplier/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -define(CHILD(I), {I, {I, start_link, []}, permanent, 5000, worker, [I]}).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-validate_auth(AuthData) ->
-    social_net_api_client:validate_auth(AuthData).
-
-send_message(Message, Users) ->
-    social_net_api_client:send_message(Message, Users).
-
-invoke_method(Method, Args) ->
-    social_net_api_client:invoke_method(Method, Args).
-
-set_payment_callback(Callback) ->
-    social_net_api_settings:set_payment_callback(Callback).
-
-get_currency_multiplier() ->
-    social_net_api_client:get_currency_multiplier().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

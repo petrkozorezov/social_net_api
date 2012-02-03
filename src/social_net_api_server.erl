@@ -39,9 +39,9 @@ init([]) ->
     Module = social_net_api_settings:network_mod(),
     {ok, Module:init_server()}.
 
-handle_call({payment, Args}, _, State) ->
+handle_call({payment, Request}, _, State) ->
     Module = social_net_api_settings:network_mod(),
-    {Response, NewState} = Module:process_payment(Args, State),
+    {Response, NewState} = Module:process_payment(Request, State),
     {reply, Response, NewState}.
 
 handle_cast(_, State) ->
@@ -64,5 +64,9 @@ start_http_server() ->
     ([
         {ip,   social_net_api_settings:server_host()},
         {port, social_net_api_settings:server_port()},
-        {loop, fun(Request) -> Request:ok( gen_server:call(Self, {payment, Request:parse_qs()}) ) end}
+        {loop, fun(Request) -> handle_request(Self, Request) end}
     ]).
+
+handle_request(Pid, Request) ->
+    Args = {Request:parse_qs(), Request:parse_post()},
+    Request:ok( gen_server:call(Pid, {payment, Args}) ).
