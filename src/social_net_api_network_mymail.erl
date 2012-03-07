@@ -154,9 +154,12 @@ invoke_callback(parsed, Callback, Args) ->
     UID             = social_net_api_utils:find("uid",            Args),
     ProductCode     = social_net_api_utils:find("service_id",     Args),
     ProductOption   = nil,
-    Amount          = case social_net_api_utils:find("sms_price", Args, integer) of
-                          nil      -> social_net_api_utils:find("other_price", Args, integer);
-                          SmsPrice -> SmsPrice
+    Amount          = case social_net_api_utils:find("mailiki_price", Args, integer) of
+                          nil       -> case social_net_api_utils:find("sms_price", Args, integer) of
+                                           nil   -> social_net_api_utils:find("other_price", Args, integer);
+                                           Other -> Other
+                                       end;
+                          MailPrice -> MailPrice
                       end,
     Profit          = social_net_api_utils:find("profit", Args, integer),
     invoke_callback(raw, Callback, {{TransactionID, UID}, {ProductCode, ProductOption}, {Amount, Profit}}).
